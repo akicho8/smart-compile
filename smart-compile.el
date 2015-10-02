@@ -47,7 +47,7 @@
 
 (defcustom smart-compile-alist
   '(
-    (emacs-lisp-mode    . (emacs-lisp-byte-compile))
+    (emacs-lisp-mode    . (lispxmp))
     (html-mode          . (browse-url-of-buffer))
     (nxhtml-mode        . (browse-url-of-buffer))
     (html-helper-mode   . (browse-url-of-buffer))
@@ -66,8 +66,7 @@
     ("\\.mp\\'"         . "mptopdf %f")
     ("\\.pl\\'"         . "perl %f")
     ("\\.rb\\'"         . "ruby %f")
-    ;;  ("\\.pl\\'"         . "perl -cw %f") ; syntax check
-    ;;  ("\\.rb\\'"         . "ruby -cw %f") ; syntax check
+    ("spec\\.rb\\'"     . "rspec %f")
     )  "Alist of filename patterns vs corresponding format control strings.
 Each element looks like (REGEXP . STRING) or (MAJOR-MODE . STRING).
 Visiting a file whose name matches REGEXP specifies STRING as the
@@ -121,7 +120,6 @@ which is defined in `smart-compile-alist'."
   (let ((executed? nil))
     (when (not (buffer-file-name))
       (error "cannot get filename."))
-    ;;     (message (number-to-string arg))
 
     (if (= arg 1)
         (setq compilation-read-command nil) ; デフォルトだと実行するコマンドの確認をしない
