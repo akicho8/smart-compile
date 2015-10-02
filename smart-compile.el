@@ -45,29 +45,30 @@
   :group 'processes
   :prefix "smart-compile")
 
-(defcustom smart-compile-alist '(
-  (emacs-lisp-mode    . (emacs-lisp-byte-compile))
-  (html-mode          . (browse-url-of-buffer))
-  (nxhtml-mode        . (browse-url-of-buffer))
-  (html-helper-mode   . (browse-url-of-buffer))
-  (octave-mode        . (run-octave))
-  ("\\.c\\'"          . "gcc -O2 %f -lm -o %n")
-;;  ("\\.c\\'"          . "gcc -O2 %f -lm -o %n && ./%n")
-  ("\\.[Cc]+[Pp]*\\'" . "g++ -O2 %f -lm -o %n")
-  ("\\.m\\'"          . "gcc -O2 %f -lobjc -lpthread -o %n")
-  ("\\.java\\'"       . "javac %f")
-  ("\\.php\\'"        . "php -l %f")
-  ("\\.f90\\'"        . "gfortran %f -o %n")
-  ("\\.[Ff]\\'"       . "gfortran %f -o %n")
-  ("\\.cron\\(tab\\)?\\'" . "crontab %f")
-  ("\\.tex\\'"        . (tex-file))
-  ("\\.texi\\'"       . "makeinfo %f")
-  ("\\.mp\\'"         . "mptopdf %f")
-  ("\\.pl\\'"         . "perl %f")
-  ("\\.rb\\'"         . "ruby %f")
-;;  ("\\.pl\\'"         . "perl -cw %f") ; syntax check
-;;  ("\\.rb\\'"         . "ruby -cw %f") ; syntax check
-)  "Alist of filename patterns vs corresponding format control strings.
+(defcustom smart-compile-alist
+  '(
+    (emacs-lisp-mode    . (emacs-lisp-byte-compile))
+    (html-mode          . (browse-url-of-buffer))
+    (nxhtml-mode        . (browse-url-of-buffer))
+    (html-helper-mode   . (browse-url-of-buffer))
+    (octave-mode        . (run-octave))
+    ("\\.c\\'"          . "gcc -O2 %f -lm -o %n")
+    ;;  ("\\.c\\'"          . "gcc -O2 %f -lm -o %n && ./%n")
+    ("\\.[Cc]+[Pp]*\\'" . "g++ -O2 %f -lm -o %n")
+    ("\\.m\\'"          . "gcc -O2 %f -lobjc -lpthread -o %n")
+    ("\\.java\\'"       . "javac %f")
+    ("\\.php\\'"        . "php -l %f")
+    ("\\.f90\\'"        . "gfortran %f -o %n")
+    ("\\.[Ff]\\'"       . "gfortran %f -o %n")
+    ("\\.cron\\(tab\\)?\\'" . "crontab %f")
+    ("\\.tex\\'"        . (tex-file))
+    ("\\.texi\\'"       . "makeinfo %f")
+    ("\\.mp\\'"         . "mptopdf %f")
+    ("\\.pl\\'"         . "perl %f")
+    ("\\.rb\\'"         . "ruby %f")
+    ;;  ("\\.pl\\'"         . "perl -cw %f") ; syntax check
+    ;;  ("\\.rb\\'"         . "ruby -cw %f") ; syntax check
+    )  "Alist of filename patterns vs corresponding format control strings.
 Each element looks like (REGEXP . STRING) or (MAJOR-MODE . STRING).
 Visiting a file whose name matches REGEXP specifies STRING as the
 format control string.  Instead of REGEXP, MAJOR-MODE can also be used.
@@ -84,26 +85,26 @@ The following %-sequences will be replaced by:
 If the second item of the alist element is an emacs-lisp FUNCTION,
 evaluate FUNCTION instead of running a compilation command.
 "
-   :type '(repeat
-           (cons
-            (choice
-             (regexp :tag "Filename pattern")
-             (function :tag "Major-mode"))
-            (choice
-             (string :tag "Compilation command")
-             (sexp :tag "Lisp expression"))))
-   :group 'smart-compile)
+       :type '(repeat
+               (cons
+                (choice
+                 (regexp :tag "Filename pattern")
+                 (function :tag "Major-mode"))
+                (choice
+                 (string :tag "Compilation command")
+                 (sexp :tag "Lisp expression"))))
+       :group 'smart-compile)
 (put 'smart-compile-alist 'risky-local-variable t)
 
-(defconst smart-compile-replace-alist '(
-  ("%F" . (buffer-file-name))
-  ("%f" . (file-name-nondirectory (buffer-file-name)))
-  ("%n" . (file-name-sans-extension
-           (file-name-nondirectory (buffer-file-name))))
-  ("%e" . (or (file-name-extension (buffer-file-name)) ""))
-  ("%o" . smart-compile-option-string)
-;;   ("%U" . (user-login-name))
-  ))
+(defconst smart-compile-replace-alist
+  '(
+    ("%F" . (buffer-file-name))
+    ("%f" . (file-name-nondirectory (buffer-file-name)))
+    ("%n" . (file-name-sans-extension (file-name-nondirectory (buffer-file-name))))
+    ("%e" . (or (file-name-extension (buffer-file-name)) ""))
+    ("%o" . smart-compile-option-string)
+    ;;   ("%U" . (user-login-name))
+    ))
 (put 'smart-compile-replace-alist 'risky-local-variable t)
 
 (defvar smart-compile-check-makefile t)
@@ -119,7 +120,6 @@ evaluate FUNCTION instead of running a compilation command.
   :type 'string
   :group 'smart-compile)
 
-
 ;;;###autoload
 (defun smart-compile (&optional arg)
   "An interface to `compile'.
@@ -128,9 +128,9 @@ which is defined in `smart-compile-alist'."
   (interactive "p")
   (let ((name (buffer-file-name))
         (not-yet t))
-    
+
     (if (not name)(error "cannot get filename."))
-;;     (message (number-to-string arg))
+    ;;     (message (number-to-string arg))
 
     (cond
 
@@ -159,9 +159,9 @@ which is defined in `smart-compile-alist'."
      ) ;; end of (cond ...)
 
     ;; compile
-    (let( (alist smart-compile-alist) 
+    (let ((alist smart-compile-alist)
           (case-fold-search nil)
-          (function nil) )
+          (function nil))
       (while (and alist not-yet)
         (if (or
              (and (symbolp (caar alist))
@@ -179,7 +179,7 @@ which is defined in `smart-compile-alist'."
                     )
                 (if (listp function)
                     (eval function)
-                    ))
+                  ))
               (setq alist nil)
               (setq not-yet nil)
               )
@@ -201,9 +201,9 @@ which is defined in `smart-compile-alist'."
               (set (make-local-variable 'compile-command) name)
             ))
       )
-    
+
     ;; compile
-    (if not-yet (call-interactively 'compile) )
+    (if not-yet (call-interactively 'compile))
 
     ))
 
