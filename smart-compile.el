@@ -124,17 +124,15 @@ which is defined in `smart-compile-alist'."
     (if (not name)(error "cannot get filename."))
     ;;     (message (number-to-string arg))
 
-    (cond
+    (if (= arg 1)
+        (setq compilation-read-command nil) ; デフォルトだと実行するコマンドの確認をしない
+      (setq compilation-read-command t))    ; C-u があると「実行するコマンドの確認をする」
 
-     ;; local command
-     ;; The prefix 4 (C-u M-x smart-compile) skips this section
-     ;; in order to re-generate the compile-command
-     ((and (not (= arg 4)) ; C-u M-x smart-compile
-           (local-variable-p 'compile-command)
-           compile-command)
+
+    (when (and (local-variable-p 'compile-command) compile-command)
       (call-interactively 'compile)
       (setq not-yet nil)
-      ))
+      )
 
     ;; compile
     (let ((alist smart-compile-alist)
