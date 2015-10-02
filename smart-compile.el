@@ -118,85 +118,72 @@ evaluate FUNCTION instead of running a compilation command.
 It calls `compile' or other compile function,
 which is defined in `smart-compile-alist'."
   (interactive "p")
-  (let ((name (buffer-file-name))
-        (not-yet t))
-
-    (if (not name)(error "cannot get filename."))
+  (let ((executed? nil))
+    (when (not (buffer-file-name))
+      (error "cannot get filename."))
     ;;     (message (number-to-string arg))
 
     (if (= arg 1)
         (setq compilation-read-command nil) ; デフォルトだと実行するコマンドの確認をしない
       (setq compilation-read-command t))    ; C-u があると「実行するコマンドの確認をする」
 
-
     (when (and (local-variable-p 'compile-command) compile-command)
       (call-interactively 'compile)
-      (setq not-yet nil)
-      )
+      (setq executed? t))
 
     ;; compile
-    (let ((alist smart-compile-alist)
-          (case-fold-search nil)
-          (function nil))
-      (while (and alist not-yet)
-        (if (or
-             (and (symbolp (caar alist))
-                  (eq (caar alist) major-mode))
-             (and (stringp (caar alist))
-                  (string-match (caar alist) name))
-             )
-            (progn
-              (setq function (cdar alist))
-              (if (stringp function)
-                  (progn
-                    (set (make-local-variable 'compile-command)
-                         (smart-compile-string function))
-                    (call-interactively 'compile)
-                    )
-                (if (listp function)
-                    (eval function)
-                  ))
-              (setq alist nil)
-              (setq not-yet nil)
-              )
-          (setq alist (cdr alist)) )
-        ))
+    (unless executed?
+      (let ((alist smart-compile-alist)
+            (case-fold-search nil)
+            (function nil))
+        (while (and alist)
+          (if (or (and (symbolp (caar alist)) (eq (caar alist) major-mode))
+                  (and (stringp (caar alist)) (string-match (caar alist) (buffer-file-name))))
+              (progn
+                (setq function (cdar alist))
+                (if (stringp function)
+                    (progn
+                      (set (make-local-variable 'compile-command)
+                           (smart-compile-string function))
+                      (call-interactively 'compile)
+                      )
+                  (if (listp function)
+                      (eval function)
+                    ))
+                (setq alist nil)
+                (setq executed? t))
+            (setq alist (cdr alist)))
+          )))
 
     ;; If compile-command is not defined and the contents begins with "#!",
     ;; set compile-command to filename.
-    (if (and not-yet
+    (unless executed?
+      (when (and
              (not (memq system-type '(windows-nt ms-dos)))
-             (not (string-match "/\\.[^/]+$" name))
-             (not
-              (and (local-variable-p 'compile-command)
-                   compile-command))
-             )
+             (not (string-match "/\\.[^/]+$" (buffer-file-name)))
+             (not (and (local-variable-p 'compile-command) compile-command)))
         (save-restriction
           (widen)
           (if (equal "#!" (buffer-substring 1 (min 3 (point-max))))
-              (set (make-local-variable 'compile-command) name)
+              (set (make-local-variable 'compile-command) (buffer-file-name))
             ))
-      )
+        ))
 
     ;; compile
-    (if not-yet (call-interactively 'compile))
+    (when (not executed?)
+      (call-interactively 'compile))
 
     ))
 
 (defun smart-compile-string (format-string)
   "Document forthcoming..."
-  (if (and (boundp 'buffer-file-name)
-           (stringp buffer-file-name))
-      (let ((rlist smart-compile-replace-alist)
-            (case-fold-search nil))
-        (while rlist
-          (while (string-match (caar rlist) format-string)
-            (setq format-string
-                  (replace-match
-                   (eval (cdar rlist)) t nil format-string)))
-          (setq rlist (cdr rlist))
-          )
-        ))
+  (when (buffer-file-name)
+    (let ((rlist smart-compile-replace-alist)
+          (case-fold-search nil))
+      (while rlist
+        (while (string-match (caar rlist) format-string)
+          (setq format-string (replace-match (eval (cdar rlist)) t nil format-string)))
+        (setq rlist (cdr rlist)))))
   format-string)
 
 (provide 'smart-compile)
