@@ -107,14 +107,6 @@ evaluate FUNCTION instead of running a compilation command.
     ))
 (put 'smart-compile-replace-alist 'risky-local-variable t)
 
-(defvar smart-compile-check-makefile t)
-(make-variable-buffer-local 'smart-compile-check-makefile)
-
-(defcustom smart-compile-make-program "make "
-  "The command by which to invoke the make program."
-  :type 'string
-  :group 'smart-compile)
-
 (defcustom smart-compile-option-string ""
   "The option string that replaces %o.  The default is empty."
   :type 'string
@@ -142,21 +134,7 @@ which is defined in `smart-compile-alist'."
            compile-command)
       (call-interactively 'compile)
       (setq not-yet nil)
-      )
-
-     ;; make?
-     ((and smart-compile-check-makefile
-           (or (file-readable-p "Makefile")
-               (file-readable-p "makefile")))
-      (if (y-or-n-p "Makefile is found.  Try 'make'? ")
-          (progn
-            (set (make-local-variable 'compile-command) "make ")
-            (call-interactively 'compile)
-            (setq not-yet nil)
-            )
-        (setq smart-compile-check-makefile nil)))
-
-     ) ;; end of (cond ...)
+      ))
 
     ;; compile
     (let ((alist smart-compile-alist)
