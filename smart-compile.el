@@ -67,10 +67,16 @@
     ("\\.texi\\'"       . "makeinfo %f")
     ("\\.mp\\'"         . "mptopdf %f")
     ("\\.pl\\'"         . "perl %f")
-    ("\\.rb\\'"         . "ruby %f")
-    ("spec\\.rb\\'"     . "rspec %f")
     ("\\.crontab\\'"    . "crontab %f")
-
+    ("\\.coffee\\'"     . "coffee -c %f && coffee -p %f")
+    ("\\.ya?ml\\'"      . "ruby -w -r socket -r yaml -r erb -r pathname -r rubygems -e 'YAML.load(ERB.new(ARGF.read).result(binding)).to_yaml.display' %f")
+    ("/apache2/.*\\.conf\\'" .  "apachectl configtest; apachectl -S; sudo apachectl restart")
+    ("Rakefile"         . "rake")
+    ("\\.csv\\'"        . "ruby -r csv -r pp -e 'pp CSV.parse(ARGF.read.gsub(/^#.*$/, \"\"), headers: :first_row, header_converters: :symbol, skip_blanks: true, converters: [:date_time, :date, :numeric]).collect(&:to_h)' %F")
+    ;; 優先度が重要なもの
+    ;; ruby
+    ("/spec/.*_spec\\.rb\\'" . "cd %G && rspec %L")
+    ("\\.rb\\'" . "ruby %f")
     )  "Alist of filename patterns vs corresponding format control strings.
 Each element looks like (REGEXP . STRING) or (MAJOR-MODE . STRING).
 Visiting a file whose name matches REGEXP specifies STRING as the
