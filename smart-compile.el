@@ -40,6 +40,8 @@
 
 ;;; Code:
 
+(require 's)
+
 (defgroup smart-compile nil
   "An interface to `compile'."
   :group 'processes
@@ -97,12 +99,12 @@ evaluate FUNCTION instead of running a compilation command.
 
 (defconst smart-compile-replace-alist
   '(
-    ("%F" . (buffer-file-name))
-    ("%f" . (file-name-nondirectory (buffer-file-name)))
-    ("%n" . (file-name-sans-extension (file-name-nondirectory (buffer-file-name))))
-    ("%e" . (or (file-name-extension (buffer-file-name)) ""))
+    ("%F" . (buffer-file-name))                                                     ; /path/to/foo.rb
+    ("%f" . (file-name-nondirectory (buffer-file-name)))                            ; foo.rb
+    ("%n" . (file-name-sans-extension (file-name-nondirectory (buffer-file-name)))) ; foo
+    ("%e" . (or (file-name-extension (buffer-file-name)) ""))                       ; el
     ("%o" . smart-compile-option-string)
-    ;;   ("%U" . (user-login-name))
+    ("%U" . (user-login-name))
     ))
 (put 'smart-compile-replace-alist 'risky-local-variable t)
 
@@ -121,11 +123,10 @@ which is defined in `smart-compile-alist'."
     (when (not (buffer-file-name))
       (error "cannot get filename."))
 
-    (if (= arg 1)
-        (setq compilation-read-command nil) ; デフォルトだと実行するコマンドの確認をしない
-      (setq compilation-read-command t))    ; C-u があると「実行するコマンドの確認をする」
+    ;; C-u を前置したときだけ再読み込みさせる
+    (setq compilation-read-command (not (= arg 1)))
 
-    (when (and (local-variable-p 'compile-command) compile-command)
+    (when (smart-compile-has-local-compile-command-p)
       (call-interactively 'compile)
       (setq executed? t))
 
@@ -141,37 +142,29 @@ which is defined in `smart-compile-alist'."
                 (setq function (cdar alist))
                 (if (stringp function)
                     (progn
-                      (set (make-local-variable 'compile-command)
-                           (smart-compile-string function))
-                      (call-interactively 'compile)
-                      )
+                      (set (make-local-variable 'compile-command) (smart-compile-string function))
+                      (call-interactively 'compile))
                   (if (listp function)
-                      (eval function)
-                    ))
+                      (eval function)))
                 (setq alist nil)
                 (setq executed? t))
-            (setq alist (cdr alist)))
-          )))
+            (setq alist (cdr alist))))))
 
     ;; If compile-command is not defined and the contents begins with "#!",
     ;; set compile-command to filename.
     (unless executed?
-      (when (and
-             (not (memq system-type '(windows-nt ms-dos)))
-             (not (string-match "/\\.[^/]+$" (buffer-file-name)))
-             (not (and (local-variable-p 'compile-command) compile-command)))
-        (save-restriction
-          (widen)
-          (if (equal "#!" (buffer-substring 1 (min 3 (point-max))))
-              (set (make-local-variable 'compile-command) (buffer-file-name))
-            ))
-        ))
+      (unless (smart-compile-has-local-compile-command-p)
+        (let ((buffer (buffer-substring 1 (min 3 (point-max)))))
+          (when (s-prefix? "#!" buffer)
+            (set (make-local-variable 'compile-command) (buffer-file-name))))))
 
     ;; compile
     (when (not executed?)
-      (call-interactively 'compile))
+      (call-interactively 'compile))))
 
-    ))
+(defun smart-compile-has-local-compile-command-p ()
+  (and (local-variable-p 'compile-command)
+       compile-command))
 
 (defun smart-compile-string (format-string)
   "Document forthcoming..."
