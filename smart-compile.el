@@ -69,6 +69,8 @@
     ("\\.pl\\'"         . "perl %f")
     ("\\.rb\\'"         . "ruby %f")
     ("spec\\.rb\\'"     . "rspec %f")
+    ("\\.crontab\\'"    . "crontab %f")
+
     )  "Alist of filename patterns vs corresponding format control strings.
 Each element looks like (REGEXP . STRING) or (MAJOR-MODE . STRING).
 Visiting a file whose name matches REGEXP specifies STRING as the
@@ -99,12 +101,14 @@ evaluate FUNCTION instead of running a compilation command.
 
 (defconst smart-compile-replace-alist
   '(
-    ("%F" . (buffer-file-name))                                                     ; /path/to/foo.rb
-    ("%f" . (file-name-nondirectory (buffer-file-name)))                            ; foo.rb
-    ("%n" . (file-name-sans-extension (file-name-nondirectory (buffer-file-name)))) ; foo
-    ("%e" . (or (file-name-extension (buffer-file-name)) ""))                       ; el
-    ("%o" . smart-compile-option-string)
+    ("%F" . (buffer-file-name))                                                      ; /path/to/myapp/app/models/user.rb
+    ("%f" . (file-name-nondirectory (buffer-file-name)))                             ; user.rb
+    ("%n" . (file-name-sans-extension (file-name-nondirectory (buffer-file-name))))  ; user
+    ("%e" . (or (file-name-extension (buffer-file-name)) ""))                        ; rb
+    ("%G" . (smart-compile-git-root))                                                ; /path/to/myapp/
+    ("%L" . (s-replace (concat (smart-compile-git-root) "/") "" (buffer-file-name))) ; app/models/user.rb
     ("%U" . (user-login-name))
+    ("%o" . smart-compile-option-string)
     ))
 (put 'smart-compile-replace-alist 'risky-local-variable t)
 
@@ -176,6 +180,9 @@ which is defined in `smart-compile-alist'."
           (setq format-string (replace-match (eval (cdar rlist)) t nil format-string)))
         (setq rlist (cdr rlist)))))
   format-string)
+
+(defun smart-compile-git-root ()
+  (expand-file-name (locate-dominating-file default-directory ".git")))
 
 (provide 'smart-compile)
 
